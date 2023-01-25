@@ -1,3 +1,4 @@
+mod random;
 use color_eyre::Result;
 
 #[tokio::main]
