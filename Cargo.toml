@@ -3,11 +3,14 @@ name = "autumn-of-empires"
 version = "0.1.0"
 edition = "2021"
 publish = false
+authors = ["Lorenzo Ravaglia <lorenzo.ravaglia@hope.edu>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 async-trait = "0.1.63"
+clap = { version = "4.1.4", features = ["derive"] }
+clap_complete = "4.1.1"
 color-eyre = { version = "0.6.2", features = ["issue-url", "url"] }
 const_format = "0.2.30"
 dotenvy = "0.15.6"

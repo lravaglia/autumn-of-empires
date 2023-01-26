@@ -2,9 +2,28 @@
 mod random;
 
 use async_trait::async_trait;
+use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use dotenvy::dotenv;
 use sqlx::prelude::*;
+
+#[derive(Parser, Debug)]
+#[command(
+    author,
+    version,
+    about = "A science fiction game inspired by Aurora4X.",
+    long_about = "A science fiction 4x written in rust."
+)]
+struct Args {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    #[command(about = "Run a turn of the game.")]
+    Run,
+}
 
 #[async_trait]
 trait GetAll: Sized {
@@ -75,6 +94,8 @@ async fn main() -> Result<()> {
     color_eyre::install()?;
     pretty_env_logger::init();
     dotenv()?;
+
+    let _args = Args::parse();
 
     let connection = sqlx::SqlitePool::connect(&std::env::var("DATABASE_URL")?).await?;
 
