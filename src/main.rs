@@ -21,7 +21,7 @@ struct Ship {
 impl GetAll for Ship {
     async fn all(connection: &sqlx::SqlitePool) -> Result<Vec<Self>> {
         let mut conn = connection.acquire().await?;
-        let r = sqlx::query_as!(Self, "SELECT * FROM ships")
+        let r = sqlx::query_as!(Self, "select * from ships")
             .fetch_all(&mut conn)
             .await?;
         Ok(r)
@@ -38,7 +38,7 @@ struct Attack {
 impl GetAll for Attack {
     async fn all(connection: &sqlx::SqlitePool) -> Result<Vec<Self>> {
         let mut conn = connection.acquire().await?;
-        let r = sqlx::query_as!(Self, "SELECT * FROM attacks")
+        let r = sqlx::query_as!(Self, "select * from attacks")
             .fetch_all(&mut conn)
             .await?;
         Ok(r)
@@ -48,12 +48,12 @@ impl GetAll for Attack {
 async fn db_reset(connection: &sqlx::SqlitePool) -> Result<()> {
     let mut conn = connection.acquire().await?;
 
-    sqlx::query!("DELETE FROM ships").execute(&mut conn).await?;
+    sqlx::query!("delete from ships").execute(&mut conn).await?;
 
-    sqlx::query!(r#"INSERT INTO ships VALUES ("One", 1)"#)
+    sqlx::query!(r#"insert into ships values ("One", 1)"#)
         .execute(&mut conn)
         .await?;
-    sqlx::query!(r#"INSERT INTO ships VALUES ("Two", 2)"#)
+    sqlx::query!(r#"insert into ships values ("Two", 2)"#)
         .execute(&mut conn)
         .await?;
 
@@ -77,27 +77,27 @@ async fn main() -> Result<()> {
         let mut conn = connection.acquire().await?;
         let mut inc = 0;
 
-        sqlx::query!("DELETE FROM attacks")
+        sqlx::query!("delete from attacks")
             .execute(&mut conn)
             .await?;
 
         for ship in Ship::all(&connection).await? {
             inc += 1;
-            sqlx::query!("INSERT INTO attacks VALUES (?1, ?2)", inc, ship.id)
+            sqlx::query!("insert into attacks values (?1, ?2)", inc, ship.id)
                 .execute(&mut conn)
                 .await?;
         }
 
-        for attack in sqlx::query_as!(Attack, "SELECT * FROM attacks")
+        for attack in sqlx::query_as!(Attack, "select * from attacks")
             .fetch_all(&mut conn)
             .await?
         {
-            let ship = sqlx::query_as!(Ship, "SELECT * FROM ships WHERE id = ?1", attack.target)
+            let ship = sqlx::query_as!(Ship, "select * from ships where id = ?1", attack.target)
                 .fetch_one(&mut conn)
                 .await?;
             let integrity = ship.integrity - 1;
             sqlx::query!(
-                "UPDATE ships SET integrity = ?1 WHERE id = ?2",
+                "update ships set integrity = ?1 where id = ?2",
                 integrity,
                 ship.id,
             )
@@ -107,7 +107,7 @@ async fn main() -> Result<()> {
 
         for ship in Ship::all(&connection).await? {
             if ship.integrity < 1 {
-                sqlx::query!("DELETE FROM ships WHERE id = ?", ship.id)
+                sqlx::query!("delete from ships where id = ?", ship.id)
                     .execute(&mut conn)
                     .await?;
             }
