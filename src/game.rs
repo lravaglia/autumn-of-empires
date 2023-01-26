@@ -1,9 +1,10 @@
 use comfy_table::presets::UTF8_FULL;
-use std::{cell::Cell, sync::Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::combat::{Attack, GetAll, Ship};
 use color_eyre::Result;
-use sqlx::{prelude::*, SqlitePool};
+use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Cell, Color, ContentArrangement};
+use sqlx::SqlitePool;
 
 /// # Id
 /// Generates a new version 7 uuid.
@@ -20,12 +21,31 @@ async fn db_reset(connection: &sqlx::SqlitePool) -> Result<()> {
     let (a, b) = (id(), id());
     let (fa, fb) = (id(), id());
 
-    sqlx::query!(r#"insert into ships values (?1, ?2, 10)"#, a, fa)
+    sqlx::query_as!(Fleet, r#"insert into fleets values (?1, "Starfleet")"#, fa)
         .execute(&mut conn)
         .await?;
-    sqlx::query!(r#"insert into ships values (?1, ?2, 10)"#, b, fb)
-        .execute(&mut conn)
-        .await?;
+    sqlx::query_as!(
+        Fleet,
+        r#"insert into fleets values (?1, "Klingon Imperial Fleet")"#,
+        fb
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query!(
+        r#"insert into ships values (?1, "USS Enterprise", ?2, 10)"#,
+        a,
+        fa
+    )
+    .execute(&mut conn)
+    .await?;
+    sqlx::query!(
+        r#"insert into ships values (?1, "Klingon Warbird", ?2, 10)"#,
+        b,
+        fb
+    )
+    .execute(&mut conn)
+    .await?;
 
     Ok(())
 }
@@ -33,21 +53,22 @@ pub async fn run() -> Result<()> {
     let connection = sqlx::SqlitePool::connect(&std::env::var("DATABASE_URL")?).await?;
 
     lazy_static::lazy_static! {
-        static ref COUNTER: Mutex<u64> = Mutex::new(0);
+        static ref COUNTER: AtomicUsize = AtomicUsize::new(0);
     }
-    let mut counter = COUNTER.lock().unwrap();
 
     if std::env::var("DB_RESET").is_ok() {
         db_reset(&connection).await?;
     }
 
     loop {
-        println!("Turn {}", counter);
+        println!(
+            "Turn {}",
+            COUNTER.swap(COUNTER.load(Ordering::Relaxed) + 1, Ordering::Relaxed)
+        );
         match turn(&connection).await? {
             Outcome::Complete => return Ok(()),
             Outcome::Continue => (),
         }
-        *counter += 1;
     }
 }
 
@@ -93,7 +114,6 @@ pub async fn turn(connection: &SqlitePool) -> Result<Outcome> {
         }
     }
 
-    use comfy_table::{modifiers::*, *};
     let mut table = comfy_table::Table::new();
     table
         .set_content_arrangement(ContentArrangement::Dynamic)
@@ -101,19 +121,25 @@ pub async fn turn(connection: &SqlitePool) -> Result<Outcome> {
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_header(vec![
             Cell::new("Fleet"),
-            Cell::new("Identity"),
+            Cell::new("Name"),
             Cell::new("Integrity"),
         ]);
 
     for Ship {
-        id,
+        name,
         fleet,
         integrity,
+        ..
     } in Ship::all(connection).await?
     {
+        let fleet = sqlx::query!("select (name) from fleets where id = ?1", fleet)
+            .fetch_one(connection)
+            .await?
+            .name;
+
         table.add_row(vec![
-            Cell::new(id),
             Cell::new(fleet),
+            Cell::new(name),
             match integrity {
                 0..4 => Cell::new(integrity).fg(Color::Red),
                 _ => Cell::new(integrity).fg(Color::Yellow),

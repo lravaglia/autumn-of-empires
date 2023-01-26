@@ -10,6 +10,7 @@ pub trait GetAll: Sized {
 #[derive(Debug, Default, PartialEq, Eq, FromRow)]
 pub struct Ship {
     pub id: String,
+    pub name: String,
     pub fleet: String,
     pub integrity: i64,
 }
