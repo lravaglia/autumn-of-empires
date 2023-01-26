@@ -3,7 +3,7 @@ mod random;
 
 use async_trait::async_trait;
 use color_eyre::Result;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use sqlx::prelude::*;
 
 #[async_trait]

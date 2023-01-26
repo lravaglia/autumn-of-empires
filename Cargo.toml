@@ -10,7 +10,7 @@ publish = false
 async-trait = "0.1.63"
 color-eyre = { version = "0.6.2", features = ["issue-url", "url"] }
 const_format = "0.2.30"
-dotenv = "0.15.0"
+dotenvy = "0.15.6"
 lazy_static = "1.4.0"
 log = { version = "0.4.17", features = ["serde", "std"] }
 nanorand = "0.7.0"
