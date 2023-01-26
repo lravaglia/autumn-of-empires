@@ -32,7 +32,13 @@ async fn main() -> Result<()> {
     dotenv()?;
 
     let args = Args::parse();
-    match args.command.unwrap() {
-        Commands::Run => game::run().await,
+
+    if let Some(command) = args.command {
+        match command {
+            Commands::Run => game::run().await,
+        }
+    } else {
+        println!("no command supplied");
+        Ok(())
     }
 }

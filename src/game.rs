@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use color_eyre::Result;
 use sqlx::{prelude::*, SqlitePool};
+
 #[async_trait]
 trait GetAll: Sized {
     async fn all(connection: &sqlx::SqlitePool) -> Result<Vec<Self>>;
@@ -71,11 +72,19 @@ pub async fn run() -> Result<()> {
     }
 
     loop {
-        turn(&connection).await?;
+        match turn(&connection).await? {
+            Outcome::Complete => return Ok(()),
+            Outcome::Continue => (),
+        }
     }
 }
 
-pub async fn turn(connection: &SqlitePool) -> Result<()> {
+pub enum Outcome {
+    Continue,
+    Complete,
+}
+
+pub async fn turn(connection: &SqlitePool) -> Result<Outcome> {
     let mut conn = connection.acquire().await?;
     let mut inc = 0;
 
@@ -90,10 +99,7 @@ pub async fn turn(connection: &SqlitePool) -> Result<()> {
             .await?;
     }
 
-    for attack in sqlx::query_as!(Attack, "select * from attacks")
-        .fetch_all(&mut conn)
-        .await?
-    {
+    for attack in Attack::all(connection).await? {
         let ship = sqlx::query_as!(Ship, "select * from ships where id = ?1", attack.target)
             .fetch_one(&mut conn)
             .await?;
@@ -115,5 +121,9 @@ pub async fn turn(connection: &SqlitePool) -> Result<()> {
         }
     }
 
-    Ok(())
+    if Ship::all(connection).await?.len() < 2 {
+        return Ok(Outcome::Complete);
+    }
+
+    Ok(Outcome::Continue)
 }
