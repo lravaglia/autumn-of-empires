@@ -45,15 +45,24 @@ impl GetAll for Attack {
     }
 }
 
+/// # Id
+/// Generates a new version 7 uuid.
+fn id() -> String {
+    use uuid::*;
+    Uuid::new_v7(Timestamp::now(NoContext)).to_string()
+}
+
 async fn db_reset(connection: &sqlx::SqlitePool) -> Result<()> {
     let mut conn = connection.acquire().await?;
 
     sqlx::query!("delete from ships").execute(&mut conn).await?;
 
-    sqlx::query!(r#"insert into ships values ("One", 1)"#)
+    let (a, b) = (id(), id());
+
+    sqlx::query!(r#"insert into ships values (?1, 1)"#, a)
         .execute(&mut conn)
         .await?;
-    sqlx::query!(r#"insert into ships values ("Two", 2)"#)
+    sqlx::query!(r#"insert into ships values (?1, 2)"#, b)
         .execute(&mut conn)
         .await?;
 
@@ -115,8 +124,8 @@ async fn main() -> Result<()> {
 
         let ships = Ship::all(&connection).await?;
 
-        for ship in &ships {
-            println!("{}: {}", ship.id, ship.integrity);
+        for Ship { id, integrity } in &ships {
+            println!("{id}: {integrity}");
         }
 
         if ships.len() < 2 {
