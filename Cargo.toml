@@ -1,6 +1,6 @@
 [package]
 name = "autumn-of-empires"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 publish = false
 authors = ["Lorenzo Ravaglia <lorenzo.ravaglia@hope.edu>"]
