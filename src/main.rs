@@ -1,4 +1,6 @@
 #![feature(no_coverage)]
+#![feature(exclusive_range_pattern)]
+mod combat;
 mod game;
 mod random;
 
