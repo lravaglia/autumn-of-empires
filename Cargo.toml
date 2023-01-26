@@ -8,7 +8,9 @@ publish = false
 
 [dependencies]
 color-eyre = { version = "0.6.2", features = ["issue-url", "url"] }
+dotenv = "0.15.0"
 lazy_static = "1.4.0"
+log = { version = "0.4.17", features = ["serde", "std"] }
 nanorand = "0.7.0"
 pretty_env_logger = "0.4.0"
 serde = { version = "1.0.152", features = ["std", "derive"] }
